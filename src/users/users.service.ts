@@ -7,11 +7,13 @@ import {
 } from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
+import { JwtService } from 'src/jwt/jwt.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly jwtService: JwtService,
   ) {}
   async createAccount({
     email,
@@ -45,7 +47,8 @@ export class UsersService {
       if (!passwordCorrect) {
         return { ok: false, error: 'Wrong Password' };
       }
-      return { ok: true, error: 'Correct Password' };
+      const token = this.jwtService.sign(user.id);
+      return { ok: true, token };
     } catch (error) {
       return { ok: false, error };
     }
