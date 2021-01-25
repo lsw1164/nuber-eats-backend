@@ -47,10 +47,14 @@ export class UsersService {
       if (!passwordCorrect) {
         return { ok: false, error: 'Wrong Password' };
       }
-      const token = this.jwtService.sign(user.id);
+      const token = await this.jwtService.sign(user.id);
       return { ok: true, token };
     } catch (error) {
       return { ok: false, error };
     }
+  }
+
+  async findById(id: number): Promise<User> {
+    return this.users.findOne({ id });
   }
 }
