@@ -12,13 +12,12 @@ export class JwtMiddleware implements NestMiddleware {
     private readonly userService: UsersService,
   ) {}
 
-  async use(req: Request, res: Response, next: NextFunction) {
+  use(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log(req.header);
-      console.log(res.json());
       if (X_JWT in req.headers) {
         const token = req.headers[X_JWT].toString();
         const decoded = this.jwtService.verify(token);
+        console.log(token, decoded);
         if (
           decoded &&
           typeof decoded === 'object' &&
