@@ -116,6 +116,14 @@ describe('UsersService', () => {
 
       expect(result).toMatchObject({ ok: true });
     });
+
+    it('should fail on exception', async () => {
+      usersRepository.findOne.mockImplementation(() => {
+        throw new Error();
+      });
+      const result = await usersService.createAccount(createAccountArgs);
+      expect(result).toEqual({ ok: false, error: "Couldn't create account" });
+    });
   });
 
   it.todo('login');
