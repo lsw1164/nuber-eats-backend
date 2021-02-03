@@ -55,28 +55,25 @@ export class UsersService {
         { select: ['id', 'password'] },
       );
       if (!user) {
-        throw new Error('User not found');
+        return { ok: false, error: 'User not found' };
       }
       const passwordCorrect = await user.checkPassword(password);
       if (!passwordCorrect) {
-        throw new Error('Wrong Password');
+        return { ok: false, error: 'Wrong Password' };
       }
       const token = this.jwtService.sign(user.id);
       return { ok: true, token };
     } catch (error) {
-      return { ok: false, error };
+      return { ok: false, error: "Can't log user in" };
     }
   }
 
   async findById(id: number): Promise<UserProfileOutput> {
     try {
-      const user = await this.users.findOne({ id });
-      if (!user) {
-        throw new Error('User not found');
-      }
+      const user = await this.users.findOneOrFail({ id });
       return { ok: true, user };
     } catch (error) {
-      return { ok: false, error };
+      return { ok: false, error: 'User not found' };
     }
   }
 

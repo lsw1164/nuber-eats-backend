@@ -11,6 +11,7 @@ const mockRepository = () => ({
   findOne: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
+  findOneOrFail: jest.fn(),
 });
 
 const mockJwtService = () => ({
@@ -120,9 +121,7 @@ describe('UsersService', () => {
     });
 
     it('should fail on exception', async () => {
-      usersRepository.findOne.mockImplementation(() => {
-        throw new Error();
-      });
+      usersRepository.findOne.mockRejectedValue(new Error());
       const result = await usersService.createAccount(createAccountArgs);
       expect(result).toEqual({ ok: false, error: "Couldn't create account" });
     });
@@ -141,7 +140,7 @@ describe('UsersService', () => {
         expect.any(Object),
         expect.any(Object),
       );
-      expect(result).toEqual({ ok: false, error: new Error('User not found') });
+      expect(result).toEqual({ ok: false, error: 'User not found' });
     });
     it('should fail if the password is wrong', async () => {
       const mockedUser = {
@@ -149,7 +148,7 @@ describe('UsersService', () => {
       };
       usersRepository.findOne.mockResolvedValue(mockedUser);
       const result = await usersService.login(loginArgs);
-      expect(result).toEqual({ ok: false, error: new Error('Wrong Password') });
+      expect(result).toEqual({ ok: false, error: 'Wrong Password' });
     });
     it('should return token if password correct', async () => {
       const mockedUser = {
@@ -163,9 +162,26 @@ describe('UsersService', () => {
       expect(jwtService.sign).toBeCalledWith(expect.any(Number));
       expect(result).toEqual({ ok: true, token: 'signed-token' });
     });
+    it('should fail on exception', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error());
+      const result = await usersService.login(loginArgs);
+      expect(result).toEqual({ ok: false, error: "Can't log user in" });
+    });
   });
-
-  it.todo('findById');
+  describe('findById', () => {
+    const findByIdArg = 1;
+    const user = { id: 1 };
+    it('should find an existing user', async () => {
+      usersRepository.findOneOrFail.mockResolvedValue(user);
+      const result = await usersService.findById(findByIdArg);
+      expect(result).toEqual({ ok: true, user });
+    });
+    it('should fail if no user is found', async () => {
+      usersRepository.findOneOrFail.mockRejectedValue(new Error());
+      const result = await usersService.findById(findByIdArg);
+      expect(result).toEqual({ ok: false, error: 'User not found' });
+    });
+  });
   it.todo('editProfile');
   it.todo('verifyEmail');
 });
