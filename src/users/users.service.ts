@@ -108,14 +108,14 @@ export class UsersService {
         { relations: ['user'] },
       );
       if (!verification) {
-        throw new Error('Verification not found');
+        return { ok: false, error: 'Verification not found' };
       }
       verification.user.verified = true;
       await this.users.save(verification.user);
       await this.users.delete(verification.id);
       return { ok: true };
-    } catch (error) {
-      return { ok: false, error };
+    } catch {
+      return { ok: false, error: 'Could not verify email.' };
     }
   }
 }
