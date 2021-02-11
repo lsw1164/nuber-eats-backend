@@ -11,9 +11,14 @@ jest.mock('got', () => {
 });
 
 const GRAPHQL_ENDPOINT = '/graphql';
+const testUser = Object.freeze({
+  email: 'test@gmail.com',
+  password: '123',
+});
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let jwtToken: string;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,12 +35,11 @@ describe('AppController (e2e)', () => {
   });
 
   describe('createAccount', () => {
-    const EMAIL = 'test@gmail.com';
     const QUERY = `
               mutation {
                 createAccount(input: {
-                  email:"${EMAIL}", 
-                  password : "12345",
+                  email:"${testUser.email}", 
+                  password : "${testUser.password}",
                   role: Owner
                 }) {
                   ok,
@@ -69,9 +73,64 @@ describe('AppController (e2e)', () => {
         });
     });
   });
-
+  describe('login', () => {
+    it('should login with correct credentials', () => {
+      const QUERY = `
+      mutation {
+        login(input:{email :"${testUser.email}", password:"${testUser.password}"}) {
+          ok,
+          error,
+          token
+        }
+      }`;
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({ query: QUERY })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { login },
+            },
+          } = res;
+          console.log(login);
+          expect(login).toEqual({
+            ok: true,
+            error: null,
+            token: expect.any(String),
+          });
+          jwtToken = login.token;
+        });
+    });
+    it('should not be able to login with wrong credentials', () => {
+      const QUERY = `
+      mutation {
+        login(input:{email :"${testUser.email}", password:"wrong"}) {
+          ok,
+          error,
+          token
+        }
+      }`;
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({ query: QUERY })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { login },
+            },
+          } = res;
+          console.log(login);
+          expect(login).toEqual({
+            ok: false,
+            error: 'Wrong Password',
+            token: null,
+          });
+        });
+    });
+  });
   it.todo('userProfile');
-  it.todo('login');
   it.todo('me');
   it.todo('editProfile');
   it.todo('verifyEmail');
