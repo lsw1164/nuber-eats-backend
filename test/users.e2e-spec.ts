@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from './../src/app.module';
-import { getConnection } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { getConnection, Repository } from 'typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 jest.mock('got', () => {
   return {
@@ -19,6 +21,7 @@ const testUser = Object.freeze({
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let jwtToken: string;
+  let usersRepository: Repository<User>;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,6 +29,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
     await app.init();
   });
 
@@ -93,7 +97,6 @@ describe('AppController (e2e)', () => {
               data: { login },
             },
           } = res;
-          console.log(login);
           expect(login).toEqual({
             ok: true,
             error: null,
@@ -121,7 +124,6 @@ describe('AppController (e2e)', () => {
               data: { login },
             },
           } = res;
-          console.log(login);
           expect(login).toEqual({
             ok: false,
             error: 'Wrong Password',
@@ -130,7 +132,75 @@ describe('AppController (e2e)', () => {
         });
     });
   });
-  it.todo('userProfile');
+  describe('userProfile', () => {
+    let userId: number;
+    beforeAll(async () => {
+      const [user] = await usersRepository.find();
+      userId = user.id;
+    });
+    it('should find my profile', () => {
+      const QUERY = `
+      {
+        userProfile(userId: ${userId}) {
+          ok,
+          error,
+          user {
+            id,
+            email
+          }
+        }
+      }
+    `;
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('x-jwt', jwtToken)
+        .send({ query: QUERY })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { userProfile },
+            },
+          } = res;
+          expect(userProfile).toEqual({
+            ok: true,
+            error: null,
+            user: expect.any(Object),
+          });
+        });
+    });
+    it('should not allow logged out user', () => {
+      const QUERY = `
+      {
+        userProfile(userId: 999) {
+          ok,
+          error,
+          user {
+            id,
+            email
+          }
+        }
+      }
+    `;
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('x-jwt', jwtToken)
+        .send({ query: QUERY })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { userProfile },
+            },
+          } = res;
+          expect(userProfile).toEqual({
+            ok: false,
+            error: 'User not found',
+            user: null,
+          });
+        });
+    });
+  });
   it.todo('me');
   it.todo('editProfile');
   it.todo('verifyEmail');
