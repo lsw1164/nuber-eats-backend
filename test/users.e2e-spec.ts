@@ -17,6 +17,10 @@ const testUser = Object.freeze({
   email: 'test@gmail.com',
   password: '123',
 });
+const editedTestUser = Object.freeze({
+  email: 'test2@gmail.com',
+  password: '12345',
+});
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -240,6 +244,62 @@ describe('AppController (e2e)', () => {
         });
     });
   });
-  it.todo('editProfile');
+
+  describe('editProfile', () => {
+    const QUERY_EDIT_PROFILE = `
+      mutation {
+        editProfile(input: {
+          email : "${editedTestUser.email}", 
+          password : "${editedTestUser.password}"
+        }) {
+          ok,
+          error
+        } 
+      }
+    `;
+    const QUERY_ME = `
+      {
+        me {
+          email
+        }
+      }
+    `;
+    it('should change email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('x-jwt', jwtToken)
+        .send({ query: QUERY_EDIT_PROFILE })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { editProfile },
+            },
+          } = res;
+          expect(editProfile).toEqual({
+            ok: true,
+            error: null,
+          });
+        });
+    });
+    it('should have new email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('x-jwt', jwtToken)
+        .send({ query: QUERY_ME })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                me: { email },
+              },
+            },
+          } = res;
+          expect(email).toBe(editedTestUser.email);
+        });
+    });
+  });
+
   it.todo('verifyEmail');
 });
