@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { getConnection, Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Verification } from 'src/users/entities/verification.entity';
 
 jest.mock('got', () => {
   return {
@@ -26,6 +27,7 @@ describe('AppController (e2e)', () => {
   let app: INestApplication;
   let jwtToken: string;
   let usersRepository: Repository<User>;
+  let verificationRepository: Repository<Verification>;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,6 +36,9 @@ describe('AppController (e2e)', () => {
 
     app = module.createNestApplication();
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    verificationRepository = module.get<Repository<Verification>>(
+      getRepositoryToken(Verification),
+    );
     await app.init();
   });
 
@@ -260,7 +265,8 @@ describe('AppController (e2e)', () => {
     const QUERY_ME = `
       {
         me {
-          email
+          email,
+          id
         }
       }
     `;
@@ -296,10 +302,64 @@ describe('AppController (e2e)', () => {
               },
             },
           } = res;
+          console.log(res.body.data.me);
           expect(email).toBe(editedTestUser.email);
         });
     });
   });
-
-  it.todo('verifyEmail');
+  describe('verifyEmail', () => {
+    let verificationCode: string;
+    let QUERY: string;
+    const QUERY_WRONG_CODE = `
+      mutation {
+        verifyEmail(input: {code : "wrong" }) {
+          ok,
+          error
+        }
+      }
+    `;
+    beforeAll(async () => {
+      const [verification] = await verificationRepository.find();
+      verificationCode = verification.code;
+      QUERY = `
+      mutation {
+        verifyEmail(input: {code : "${verificationCode}" }) {
+          ok,
+          error
+        }
+      }
+    `;
+    });
+    it('should verify email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({ query: QUERY })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { verifyEmail },
+            },
+          } = res;
+          expect(verifyEmail).toEqual({ ok: true, error: null });
+        });
+    });
+    it('should fail on verification code not found', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({ query: QUERY_WRONG_CODE })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: { verifyEmail },
+            },
+          } = res;
+          expect(verifyEmail).toEqual({
+            ok: false,
+            error: 'Verification not found',
+          });
+        });
+    });
+  });
 });
