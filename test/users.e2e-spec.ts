@@ -29,6 +29,11 @@ describe('AppController (e2e)', () => {
   let usersRepository: Repository<User>;
   let verificationRepository: Repository<Verification>;
 
+  const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
+  const publicTest = (query: string) => baseTest().send({ query });
+  const privateTest = (query: string) =>
+    baseTest().set('x-jwt', jwtToken).send({ query });
+
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -61,9 +66,7 @@ describe('AppController (e2e)', () => {
               }
         `;
     it('should create account', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY })
+      return publicTest(QUERY)
         .expect(200)
         .expect((res) => {
           expect(res.body.data.createAccount).toEqual({
@@ -74,9 +77,7 @@ describe('AppController (e2e)', () => {
     });
 
     it('should fail if account already exists', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY })
+      return publicTest(QUERY)
         .expect(200)
         .expect((res) => {
           expect(res.body.data.createAccount).toEqual({
@@ -96,9 +97,7 @@ describe('AppController (e2e)', () => {
           token
         }
       }`;
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY })
+      return publicTest(QUERY)
         .expect(200)
         .expect((res) => {
           const {
@@ -123,9 +122,7 @@ describe('AppController (e2e)', () => {
           token
         }
       }`;
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY })
+      return publicTest(QUERY)
         .expect(200)
         .expect((res) => {
           const {
@@ -160,10 +157,7 @@ describe('AppController (e2e)', () => {
         }
       }
     `;
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .set('x-jwt', jwtToken)
-        .send({ query: QUERY })
+      return privateTest(QUERY)
         .expect(200)
         .expect((res) => {
           const {
@@ -191,10 +185,7 @@ describe('AppController (e2e)', () => {
         }
       }
     `;
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .set('x-jwt', jwtToken)
-        .send({ query: QUERY })
+      return privateTest(QUERY)
         .expect(200)
         .expect((res) => {
           const {
@@ -219,9 +210,7 @@ describe('AppController (e2e)', () => {
       }
     `;
     it('should find my profile', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .set('x-jwt', jwtToken)
+      return privateTest(QUERY)
         .send({ query: QUERY })
         .expect(200)
         .expect((res) => {
@@ -236,9 +225,7 @@ describe('AppController (e2e)', () => {
         });
     });
     it('should not allow logged out user', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY })
+      return publicTest(QUERY)
         .expect(200)
         .expect((res) => {
           const {
@@ -271,10 +258,7 @@ describe('AppController (e2e)', () => {
       }
     `;
     it('should change email', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .set('x-jwt', jwtToken)
-        .send({ query: QUERY_EDIT_PROFILE })
+      return privateTest(QUERY_EDIT_PROFILE)
         .expect(200)
         .expect((res) => {
           const {
@@ -289,10 +273,7 @@ describe('AppController (e2e)', () => {
         });
     });
     it('should have new email', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .set('x-jwt', jwtToken)
-        .send({ query: QUERY_ME })
+      return privateTest(QUERY_ME)
         .expect(200)
         .expect((res) => {
           const {
@@ -302,7 +283,6 @@ describe('AppController (e2e)', () => {
               },
             },
           } = res;
-          console.log(res.body.data.me);
           expect(email).toBe(editedTestUser.email);
         });
     });
@@ -331,9 +311,7 @@ describe('AppController (e2e)', () => {
     `;
     });
     it('should verify email', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY })
+      return publicTest(QUERY)
         .expect(200)
         .expect((res) => {
           const {
@@ -345,9 +323,7 @@ describe('AppController (e2e)', () => {
         });
     });
     it('should fail on verification code not found', () => {
-      return request(app.getHttpServer())
-        .post(GRAPHQL_ENDPOINT)
-        .send({ query: QUERY_WRONG_CODE })
+      return publicTest(QUERY_WRONG_CODE)
         .expect(200)
         .expect((res) => {
           const {
