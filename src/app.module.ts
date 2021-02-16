@@ -17,6 +17,7 @@ import { MailModule } from './mail/mail.module';
 import { Restaurant } from './restaurant/entities/restaurant.entity';
 import { Category } from './restaurant/entities/category.entity';
 import { RestaurantModule } from './restaurant/restaurant.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { RestaurantModule } from './restaurant/restaurant.module';
       context: ({ req }) => ({ user: req['user'] }),
     }),
     JwtModule.forRoot({ privateKey: process.env.PRIVATE_KEY }),
+    AuthModule,
     UsersModule,
     RestaurantModule,
     MailModule.forRoot({
