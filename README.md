@@ -6,7 +6,7 @@ The Backend of Nuber Eats Clone
 
 - [x] Edit Restaurant
 - [x] Delete Restaurant
-- [ ] See Categories
+- [x] See Categories
 - [ ] See Restaurants by Category (pagination)
 
 - [ ] See Restaurants (pagination)

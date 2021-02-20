@@ -105,4 +105,8 @@ export class RestaurantService {
       return { ok: false, error: 'Could not delete Restaurant' };
     }
   }
+
+  countRestaurants(category: Category): Promise<Number> {
+    return this.restaurants.count({ category });
+  }
 }
