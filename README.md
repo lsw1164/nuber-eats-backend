@@ -4,8 +4,8 @@ The Backend of Nuber Eats Clone
 
 ## Restaurant Model
 
-- [ ] Edit Restaurant
-- [ ] Delete Restaurant
+- [x] Edit Restaurant
+- [x] Delete Restaurant
 - [ ] See Categories
 - [ ] See Restaurants by Category (pagination)
 
