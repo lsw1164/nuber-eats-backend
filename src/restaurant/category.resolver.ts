@@ -30,7 +30,9 @@ export class CategoryResolver {
   }
 
   @Query((type) => CategoryOutput)
-  category(@Args() categoryInput: CategoryInput): Promise<CategoryOutput> {
+  category(
+    @Args('input') categoryInput: CategoryInput,
+  ): Promise<CategoryOutput> {
     return this.categoryService.findCategoryBySlug(categoryInput);
   }
 }

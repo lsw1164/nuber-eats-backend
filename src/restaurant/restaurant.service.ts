@@ -17,6 +17,8 @@ import {
   DeleteRestaurantInput,
   DeleteRestaurantOutput,
 } from './dtos/delete-restaurant.dto';
+import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
+import { RESTAURANT_TAKE_COUNT } from './restaurant.constant';
 
 @Injectable()
 export class RestaurantService {
@@ -106,7 +108,48 @@ export class RestaurantService {
     }
   }
 
-  countRestaurants(category: Category): Promise<Number> {
-    return this.restaurants.count({ category });
+  async countRestaurants(category: Category): Promise<number> {
+    try {
+      return this.restaurants.count({ category });
+    } catch {
+      return 0;
+    }
+  }
+
+  async allRestaurants({ page }: RestaurantsInput): Promise<RestaurantsOutput> {
+    try {
+      const [restaurants, totalResults] = await this.restaurants.findAndCount({
+        skip: (page - 1) * RESTAURANT_TAKE_COUNT,
+        take: RESTAURANT_TAKE_COUNT,
+      });
+      return {
+        ok: true,
+        results: restaurants,
+        totalPages: Math.ceil(totalResults / RESTAURANT_TAKE_COUNT),
+        totalResults,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load restaurants',
+      };
+    }
+  }
+
+  async findRestaurantsByCategory(
+    category: Category,
+    page: number,
+  ): Promise<Restaurant[]> {
+    try {
+      const restaurants = await this.restaurants.find({
+        where: { category },
+        take: RESTAURANT_TAKE_COUNT,
+        skip: (page - 1) * RESTAURANT_TAKE_COUNT,
+      });
+      console.log(restaurants);
+      return restaurants;
+    } catch {
+      return [];
+    }
   }
 }
