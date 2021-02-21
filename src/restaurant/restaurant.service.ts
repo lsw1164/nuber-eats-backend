@@ -19,6 +19,7 @@ import {
 } from './dtos/delete-restaurant.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 import { RESTAURANT_TAKE_COUNT } from './restaurant.constant';
+import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -150,6 +151,20 @@ export class RestaurantService {
       return restaurants;
     } catch {
       return [];
+    }
+  }
+
+  async findRestaurantsById({
+    restaurantId,
+  }: RestaurantInput): Promise<RestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOne(restaurantId);
+      if (!restaurant) {
+        return { ok: false, error: 'Restaurant not found' };
+      }
+      return { ok: true, restaurant };
+    } catch {
+      return { ok: false, error: 'Could not find restaurant' };
     }
   }
 }
