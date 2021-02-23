@@ -27,6 +27,7 @@ import {
 import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
 import { Dish } from './entities/dish.entity';
 import { EditDishInput } from './dtos/edit-dish.dto';
+import { DeleteDishInput } from './dtos/delete-dish.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -253,6 +254,34 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not edit dish',
+      };
+    }
+  }
+
+  async deleteDish(
+    owner: User,
+    deleteDishInput: DeleteDishInput,
+  ): Promise<CreateDishOutput> {
+    try {
+      const dish = await this.dishes.findOne(deleteDishInput.dishId, {
+        relations: ['restaurant'],
+      });
+      if (!dish) {
+        return { ok: false, error: 'Dish not found' };
+      }
+      if (dish.restaurant.ownerId !== owner.id) {
+        return {
+          ok: false,
+          error: "You can't delete a dish of restaurant that you don't own",
+        };
+      }
+      await this.dishes.delete(dish.id);
+      return { ok: true };
+    } catch (error) {
+      console.log(error);
+      return {
+        ok: false,
+        error: 'Could not delete dish',
       };
     }
   }
