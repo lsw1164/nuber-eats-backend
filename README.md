@@ -13,7 +13,7 @@ The Backend of Nuber Eats Clone
 - [x] See Restaurant
 - [x] Search Restaurant
 
-- [ ] Create Dish
+- [x] Create Dish
 - [ ] Edit Dish
 - [ ] Delete Dish
 
