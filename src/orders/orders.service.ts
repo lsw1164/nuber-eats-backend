@@ -36,7 +36,8 @@ export class OrdersService {
           return { ok: false, error: 'Dish not found.' };
         }
         let dishFinalPrice = dish.price;
-        for (const itemOption of item.options) {
+        const itemOptions = item.options ?? [];
+        for (const itemOption of itemOptions) {
           const dishOption = dish.options.find(
             (dishOption) => dishOption.name === itemOption.name,
           );
@@ -72,7 +73,8 @@ export class OrdersService {
         }),
       );
       return { ok: true };
-    } catch {
+    } catch (error) {
+      console.log(error);
       return { ok: false, error: 'Could not create order.' };
     }
   }
