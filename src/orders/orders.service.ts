@@ -5,10 +5,11 @@ import { Restaurant } from 'src/restaurant/entities/restaurant.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateOrderIntput, CreateOrderOutput } from './dtos/create-order-dto';
+import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { OrderItem } from './entities/order-item.entity';
-import { Order } from './entities/order.entity';
+import { Order, OrderStatus } from './entities/order.entity';
 
 @Injectable()
 export class OrdersService {
@@ -140,6 +141,35 @@ export class OrdersService {
     }
   }
 
+  async editOrder(
+    user: User,
+    { id: orderId, status }: EditOrderInput,
+  ): Promise<EditOrderOutput> {
+    try {
+      const order = await this.orders.findOne(orderId, {
+        relations: ['restaurant'],
+      });
+      if (!order) {
+        return { ok: false, error: 'Order not found.' };
+      }
+      if (!this.canSeeOrder(user, order)) {
+        return { ok: false, error: "Can't see order." };
+      }
+      if (!this.canEditOrder(user, status)) {
+        return { ok: false, error: "Can't edit order." };
+      }
+      await this.orders.save([
+        {
+          id: orderId,
+          status,
+        },
+      ]);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Could not edit order.' };
+    }
+  }
+
   canSeeOrder(user: User, order: Order): boolean {
     if (user.role === UserRole.Client) {
       return user.id === order.customerId;
@@ -149,6 +179,21 @@ export class OrdersService {
     }
     if (user.role === UserRole.Owner) {
       return user.id === order.restaurant.ownerId;
+    }
+    return false;
+  }
+
+  canEditOrder(user: User, status: OrderStatus): boolean {
+    if (user.role === UserRole.Client) {
+      return false;
+    }
+    if (user.role === UserRole.Delivery) {
+      return (
+        status === OrderStatus.PickedUp || status === OrderStatus.Delivered
+      );
+    }
+    if (user.role === UserRole.Owner) {
+      return status === OrderStatus.Cooking || status === OrderStatus.Cooked;
     }
     return false;
   }

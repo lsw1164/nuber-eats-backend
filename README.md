@@ -19,7 +19,7 @@ The Backend of Nuber Eats Clone
 
 - [x] Create Orders
 - [x] Read Orders
-- [ ] Edit Orders
+- [x] Edit Orders
 - [ ] Delete Orders
 
 - [ ] Orders Subscription (Owner, Customer, Delivery)
