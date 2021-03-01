@@ -17,8 +17,8 @@ The Backend of Nuber Eats Clone
 - [x] Edit Dish
 - [x] Delete Dish
 
-- [ ] Create Orders
-- [ ] Read Orders
+- [x] Create Orders
+- [x] Read Orders
 - [ ] Edit Orders
 - [ ] Delete Orders
 

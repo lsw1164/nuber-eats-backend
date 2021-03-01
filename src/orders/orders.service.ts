@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Dish } from 'src/restaurant/entities/dish.entity';
 import { Restaurant } from 'src/restaurant/entities/restaurant.entity';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserRole } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateOrderIntput, CreateOrderOutput } from './dtos/create-order-dto';
+import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
+import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
 
@@ -77,5 +79,77 @@ export class OrdersService {
       console.log(error);
       return { ok: false, error: 'Could not create order.' };
     }
+  }
+
+  async getOrders(
+    user: User,
+    { status }: GetOrdersInput,
+  ): Promise<GetOrdersOutput> {
+    try {
+      let orders: Order[];
+      switch (user.role) {
+        case UserRole.Client:
+          orders = await this.orders.find({
+            where: {
+              customer: user,
+              ...(status && { status }),
+            },
+          });
+          break;
+        case UserRole.Delivery:
+          orders = await this.orders.find({
+            where: {
+              driver: user,
+              ...(status && { status }),
+            },
+          });
+          break;
+        case UserRole.Owner:
+          const restaurants = await this.restaurants.find({
+            where: { owner: user },
+            relations: ['orders'],
+          });
+          orders = restaurants.map((restaurant) => restaurant.orders).flat(1);
+          if (status) {
+            orders = orders.filter((order) => order.status === status);
+          }
+      }
+      return { ok: true, orders };
+    } catch {
+      return { ok: false, error: 'Could not get orders' };
+    }
+  }
+
+  async getOrder(
+    user: User,
+    { id: orderId }: GetOrderInput,
+  ): Promise<GetOrderOutput> {
+    try {
+      const order = await this.orders.findOne(orderId, {
+        relations: ['restaurant'],
+      });
+      if (!order) {
+        return { ok: false, error: 'Order not found.' };
+      }
+      if (!this.canSeeOrder(user, order)) {
+        return { ok: false, error: 'You cant see that' };
+      }
+      return { ok: true, order };
+    } catch {
+      return { ok: false, error: 'Could not load order.' };
+    }
+  }
+
+  canSeeOrder(user: User, order: Order): boolean {
+    if (user.role === UserRole.Client) {
+      return user.id === order.customerId;
+    }
+    if (user.role === UserRole.Delivery) {
+      return user.id === order.driverId;
+    }
+    if (user.role === UserRole.Owner) {
+      return user.id === order.restaurant.ownerId;
+    }
+    return false;
   }
 }
