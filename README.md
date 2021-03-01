@@ -17,6 +17,10 @@ The Backend of Nuber Eats Clone
 - [x] Edit Dish
 - [x] Delete Dish
 
-- [ ] Orders CRUD
+- [ ] Create Orders
+- [ ] Read Orders
+- [ ] Edit Orders
+- [ ] Delete Orders
+
 - [ ] Orders Subscription (Owner, Customer, Delivery)
 - [ ] Payments (CRON)
