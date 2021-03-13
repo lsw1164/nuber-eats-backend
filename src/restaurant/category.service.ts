@@ -40,6 +40,7 @@ export class CategoryService {
         ok: true,
         category,
         totalPages: Math.ceil(totalResults / RESTAURANT_TAKE_COUNT),
+        totalResults,
       };
     } catch {
       return { ok: false, error: 'Could not load category' };
